@@ -1,12 +1,8 @@
 package com.skygolf.sggattserver
 
-import android.Manifest
-import android.bluetooth.BluetoothAdapter
-import android.content.pm.PackageManager
 import android.os.Bundle
 import android.widget.EditText
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.app.ActivityCompat
 import timber.log.Timber
 
 class MainActivity : AppCompatActivity() {
@@ -17,7 +13,7 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
 
         log = findViewById(R.id.log)
-        Timber.plant(LogTree())
+        Timber.plant(LogTree(), Timber.DebugTree())
 
         Timber.tag(TAG).i("App started")
 
@@ -33,7 +29,7 @@ class MainActivity : AppCompatActivity() {
         SgServer.startServer(this)
     }
 
-    private inner class LogTree : Timber.DebugTree() {
+    private inner class LogTree : Timber.Tree() {
         override fun log(priority: Int, tag: String?, message: String, t: Throwable?) {
             super.log(priority, tag, message, t)
 

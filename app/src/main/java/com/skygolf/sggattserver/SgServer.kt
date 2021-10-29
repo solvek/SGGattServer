@@ -60,13 +60,13 @@ object SgServer : BluetoothGattServerCallback() {
             BluetoothDiagnostic.printConnectionState(newState)
         )
 
-        if (newState == BluetoothGatt.STATE_CONNECTED) {
-            stopAdvertising()
-        }
-
-        if (newState == BluetoothGatt.STATE_DISCONNECTED){
-            startAdvertising()
-        }
+//        if (newState == BluetoothGatt.STATE_CONNECTED) {
+//            stopAdvertising()
+//        }
+//
+//        if (newState == BluetoothGatt.STATE_DISCONNECTED){
+//            startAdvertising()
+//        }
     }
 
     override fun onServiceAdded(status: Int, service: BluetoothGattService?) {
@@ -186,6 +186,8 @@ object SgServer : BluetoothGattServerCallback() {
     }
 
     private fun sendLocation(device: BluetoothDevice) {
+        Timber.tag(TAG).i("Sending location to client")
+
         if (!characteristicRX.setValue(locationData)) {
             Timber.tag(TAG)
                 .d("mCharacteristicTX setValue error")
@@ -208,6 +210,7 @@ object SgServer : BluetoothGattServerCallback() {
         }
     }
 
+    @SuppressLint("HardwareIds")
     private fun initAdvertiser() {
         val bluetoothAdapter: BluetoothAdapter = bluetoothManager.adapter
 
@@ -251,10 +254,10 @@ object SgServer : BluetoothGattServerCallback() {
         bluetoothLeAdvertiser.startAdvertising(settings, data, scanResponse, advertiseCallback)
     }
 
-    private fun stopAdvertising() {
-        bluetoothLeAdvertiser.stopAdvertising(advertiseCallback)
-        Timber.tag(TAG).i("Advertisement stopped")
-    }
+//    private fun stopAdvertising() {
+//        bluetoothLeAdvertiser.stopAdvertising(advertiseCallback)
+//        Timber.tag(TAG).i("Advertisement stopped")
+//    }
 
     private val advertiseCallback = object : AdvertiseCallback() {
         override fun onStartSuccess(settingsInEffect: AdvertiseSettings?) {
