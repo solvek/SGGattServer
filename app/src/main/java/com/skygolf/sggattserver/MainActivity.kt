@@ -36,8 +36,11 @@ class MainActivity : AppCompatActivity() {
     private inner class LogTree : Timber.DebugTree() {
         override fun log(priority: Int, tag: String?, message: String, t: Throwable?) {
             super.log(priority, tag, message, t)
-            log.append("\r\n")
-            log.append(message)
+
+            runOnUiThread {
+                log.append("\r\n")
+                log.append(message)
+            }
         }
     }
 
