@@ -1,5 +1,6 @@
 package com.skygolf.sggattserver
 
+import android.annotation.SuppressLint
 import android.bluetooth.*
 import android.bluetooth.le.AdvertiseCallback
 import android.bluetooth.le.AdvertiseData
@@ -11,6 +12,7 @@ import androidx.appcompat.app.AppCompatActivity
 import timber.log.Timber
 import java.util.*
 
+@SuppressLint("MissingPermission")
 object SgServer : BluetoothGattServerCallback() {
     private const val TAG = "SgProfile"
     private val SERVICE = UUID.fromString("6e400001-b5a3-f393-e0a9-e50e24dcca9e")
@@ -214,7 +216,12 @@ object SgServer : BluetoothGattServerCallback() {
 //                .e("Bluetooth adapter is null")
 //            return
 //        }
-//
+
+        val name = bluetoothAdapter.name
+        val address = bluetoothAdapter.address
+
+        Timber.tag(TAG).i("Device name: $name, address: $address")
+
         bluetoothLeAdvertiser = bluetoothAdapter.bluetoothLeAdvertiser
     }
 
@@ -240,19 +247,18 @@ object SgServer : BluetoothGattServerCallback() {
 
         val scanResponse = AdvertiseData.Builder().setIncludeDeviceName(true).build()
 
+        Timber.tag(TAG).i("Starting advertisement")
         bluetoothLeAdvertiser.startAdvertising(settings, data, scanResponse, advertiseCallback)
     }
 
     private fun stopAdvertising() {
         bluetoothLeAdvertiser.stopAdvertising(advertiseCallback)
-        Timber.tag(TAG)
-            .i("Advertisement stopped")
+        Timber.tag(TAG).i("Advertisement stopped")
     }
 
     private val advertiseCallback = object : AdvertiseCallback() {
         override fun onStartSuccess(settingsInEffect: AdvertiseSettings?) {
-            Timber.tag(TAG)
-                .i("LE Advertise Started.")
+            Timber.tag(TAG).i("LE Advertise Started.")
         }
 
         override fun onStartFailure(errorCode: Int) {

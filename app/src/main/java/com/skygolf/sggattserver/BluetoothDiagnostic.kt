@@ -1,9 +1,11 @@
 package com.skygolf.sggattserver
 
+import android.annotation.SuppressLint
 import android.bluetooth.*
 import android.bluetooth.le.AdvertiseCallback
 import android.text.TextUtils
 
+@SuppressLint("MissingPermission")
 object BluetoothDiagnostic {
     private const val GATT_CONN_TIMEOUT = 8
     private const val GATT_CONN_TERMINATE_PEER_USER = 19 // Disconnect on Server side
@@ -83,19 +85,19 @@ object BluetoothDiagnostic {
         } else name + "(" + device.address + ")"
     }
 
-    fun printDevice(device: BluetoothDevice?): String? {
+    fun printDevice(device: BluetoothDevice?): String {
         return if (device == null) {
             "{null device}"
-        } else "{"
-                + "address: "
-                + device.address
-                + ", name: "
-                + device.name
-                + ", bond: "
-                + printBondState(device.bondState)
-                + ", type: "
-                + printDeviceType(device.type)
-                + "}"
+        } else "{" +
+                "address: "+
+                device.address +
+                ", name: "+
+                device.name+
+                ", bond: "+
+                printBondState(device.bondState)+
+                ", type: "+
+                printDeviceType(device.type)+
+                "}"
     }
 
     fun printDeviceType(type: Int): String {
