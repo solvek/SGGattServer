@@ -8,29 +8,21 @@ import android.bluetooth.le.AdvertiseSettings
 import android.bluetooth.le.BluetoothLeAdvertiser
 import android.content.Context
 import android.os.ParcelUuid
-import androidx.appcompat.app.AppCompatActivity
 import timber.log.Timber
 import java.util.*
 
-@SuppressLint("MissingPermission")
-object SgPeripheral : BluetoothGattServerCallback() {
-    private const val TAG = "SgPeripheral"
-    private val SERVICE = UUID.fromString("6e400001-b5a3-f393-e0a9-e50e24dcca9e")
-    private val CHARA_RX = UUID.fromString("6e400003-b5a3-f393-e0a9-e50e24dcca9e")
-    private val CHARA_TX = UUID.fromString("6e400002-b5a3-f393-e0a9-e50e24dcca9e")
-    private val DESCRIPTOR_NOTIFICATION = UUID.fromString("00002902-0000-1000-8000-00805f9b34fb")
+private const val TAG = "SgPeripheral"
 
+@SuppressLint("MissingPermission")
+class SgPeripheral(context: Context): BleContext(context) {
     private val locationData: ByteArray = byteArrayOf(0x03, 0x54, 0x68)
 
-    private lateinit var bluetoothManager: BluetoothManager
     private lateinit var bluetoothLeAdvertiser: BluetoothLeAdvertiser
     private lateinit var gattServer: BluetoothGattServer
     private lateinit var characteristicRX: BluetoothGattCharacteristic
 
-    fun start(context: Context) {
-        bluetoothManager = context.getSystemService(AppCompatActivity.BLUETOOTH_SERVICE) as BluetoothManager
-
-        gattServer = bluetoothManager.openGattServer(context, this)
+    fun start() {
+        gattServer = bluetoothManager.openGattServer(context, serverCallback)
 //        if (gattServer == null) {
 //            Timber.tag(TAG)
 //                .e("Unable to create GATT server")
@@ -48,108 +40,6 @@ object SgPeripheral : BluetoothGattServerCallback() {
 
         initAdvertiser()
         startAdvertising()
-    }
-
-    override fun onConnectionStateChange(device: BluetoothDevice?, status: Int, newState: Int) {
-        super.onConnectionStateChange(device, status, newState)
-
-        Timber.tag(TAG).d(
-            "onConnectionStateChange device %s. Status: %s, New state: %s",
-            BluetoothDiagnostic.printDevice(device),
-            BluetoothDiagnostic.printGattStatus(status),
-            BluetoothDiagnostic.printConnectionState(newState)
-        )
-
-//        if (newState == BluetoothGatt.STATE_CONNECTED) {
-//            stopAdvertising()
-//        }
-//
-//        if (newState == BluetoothGatt.STATE_DISCONNECTED){
-//            startAdvertising()
-//        }
-    }
-
-    override fun onServiceAdded(status: Int, service: BluetoothGattService?) {
-        Timber.tag(TAG)
-            .i("GattServer.onServiceAdded. status: %s", BluetoothDiagnostic.printGattStatus(status))
-        super.onServiceAdded(status, service)
-    }
-
-    override fun onCharacteristicReadRequest(
-        device: BluetoothDevice?, requestId: Int, offset: Int,
-        characteristic: BluetoothGattCharacteristic?
-    ) {
-        super.onCharacteristicReadRequest(device, requestId, offset, characteristic)
-    }
-
-    override fun onCharacteristicWriteRequest(
-        device: BluetoothDevice?,
-        requestId: Int,
-        characteristic: BluetoothGattCharacteristic?,
-        preparedWrite: Boolean,
-        responseNeeded: Boolean,
-        offset: Int,
-        value: ByteArray?
-    ) {
-        super.onCharacteristicWriteRequest(
-            device, requestId, characteristic, preparedWrite,
-            responseNeeded, offset, value
-        )
-        Timber.tag(TAG)
-            .d("GattServer.GetData from device: %s", Arrays.toString(value))
-        if (responseNeeded) {
-            gattServer.sendResponse(
-                device,
-                requestId,
-                BluetoothGatt.GATT_SUCCESS,
-                0,
-                null
-            )
-        }
-
-        if (device != null) {
-            sendLocation(device)
-        }
-    }
-
-    override fun onDescriptorReadRequest(
-        device: BluetoothDevice?, requestId: Int, offset: Int,
-        descriptor: BluetoothGattDescriptor
-    ) {
-        super.onDescriptorReadRequest(device, requestId, offset, descriptor)
-        Timber.tag(TAG).d(
-            "GattServer.onDescriptorReadRequest. Device tried to read descriptor: %s",
-            descriptor.uuid
-        )
-        Timber.tag(TAG)
-            .d("Value: %s", Arrays.toString(descriptor.value))
-        if (offset != 0) {
-            gattServer.sendResponse(
-                device, requestId, BluetoothGatt.GATT_INVALID_OFFSET,
-                offset,  /* value (optional) */
-                null
-            )
-            return
-        }
-        gattServer.sendResponse(
-            device, requestId, BluetoothGatt.GATT_SUCCESS, offset,
-            descriptor.value
-        )
-    }
-
-    override fun onDescriptorWriteRequest(
-        device: BluetoothDevice?, requestId: Int,
-        descriptor: BluetoothGattDescriptor?, preparedWrite: Boolean, responseNeeded: Boolean,
-        offset: Int, value: ByteArray?
-    ) {
-        Timber.tag(TAG)
-            .d("GattServer.onDescriptorWriteRequest.")
-        super.onDescriptorWriteRequest(
-            device, requestId, descriptor, preparedWrite, responseNeeded,
-            offset, value
-        )
-        //bleSyncServer.addIncomingBlock(value);
-        gattServer.sendResponse(device, requestId, BluetoothGatt.GATT_SUCCESS, 0, null)
     }
 
     private fun createService(): BluetoothGattService {
@@ -259,6 +149,110 @@ object SgPeripheral : BluetoothGattServerCallback() {
 //        Timber.tag(TAG).i("Advertisement stopped")
 //    }
 
+    private val serverCallback = object : BluetoothGattServerCallback(){
+        override fun onConnectionStateChange(device: BluetoothDevice?, status: Int, newState: Int) {
+            super.onConnectionStateChange(device, status, newState)
+
+            Timber.tag(TAG).d(
+                "onConnectionStateChange device %s. Status: %s, New state: %s",
+                BluetoothDiagnostic.printDevice(device),
+                BluetoothDiagnostic.printGattStatus(status),
+                BluetoothDiagnostic.printConnectionState(newState)
+            )
+
+//        if (newState == BluetoothGatt.STATE_CONNECTED) {
+//            stopAdvertising()
+//        }
+//
+//        if (newState == BluetoothGatt.STATE_DISCONNECTED){
+//            startAdvertising()
+//        }
+        }
+
+        override fun onServiceAdded(status: Int, service: BluetoothGattService?) {
+            Timber.tag(TAG)
+                .i("GattServer.onServiceAdded. status: %s", BluetoothDiagnostic.printGattStatus(status))
+            super.onServiceAdded(status, service)
+        }
+
+        override fun onCharacteristicReadRequest(
+            device: BluetoothDevice?, requestId: Int, offset: Int,
+            characteristic: BluetoothGattCharacteristic?
+        ) {
+            super.onCharacteristicReadRequest(device, requestId, offset, characteristic)
+        }
+
+        override fun onCharacteristicWriteRequest(
+            device: BluetoothDevice?,
+            requestId: Int,
+            characteristic: BluetoothGattCharacteristic?,
+            preparedWrite: Boolean,
+            responseNeeded: Boolean,
+            offset: Int,
+            value: ByteArray?
+        ) {
+            super.onCharacteristicWriteRequest(
+                device, requestId, characteristic, preparedWrite,
+                responseNeeded, offset, value
+            )
+            Timber.tag(TAG)
+                .d("GattServer.GetData from device: %s", Arrays.toString(value))
+            if (responseNeeded) {
+                gattServer.sendResponse(
+                    device,
+                    requestId,
+                    BluetoothGatt.GATT_SUCCESS,
+                    0,
+                    null
+                )
+            }
+
+            if (device != null) {
+                sendLocation(device)
+            }
+        }
+
+        override fun onDescriptorReadRequest(
+            device: BluetoothDevice?, requestId: Int, offset: Int,
+            descriptor: BluetoothGattDescriptor
+        ) {
+            super.onDescriptorReadRequest(device, requestId, offset, descriptor)
+            Timber.tag(TAG).d(
+                "GattServer.onDescriptorReadRequest. Device tried to read descriptor: %s",
+                descriptor.uuid
+            )
+            Timber.tag(TAG)
+                .d("Value: %s", Arrays.toString(descriptor.value))
+            if (offset != 0) {
+                gattServer.sendResponse(
+                    device, requestId, BluetoothGatt.GATT_INVALID_OFFSET,
+                    offset,  /* value (optional) */
+                    null
+                )
+                return
+            }
+            gattServer.sendResponse(
+                device, requestId, BluetoothGatt.GATT_SUCCESS, offset,
+                descriptor.value
+            )
+        }
+
+        override fun onDescriptorWriteRequest(
+            device: BluetoothDevice?, requestId: Int,
+            descriptor: BluetoothGattDescriptor?, preparedWrite: Boolean, responseNeeded: Boolean,
+            offset: Int, value: ByteArray?
+        ) {
+            Timber.tag(TAG)
+                .d("GattServer.onDescriptorWriteRequest.")
+            super.onDescriptorWriteRequest(
+                device, requestId, descriptor, preparedWrite, responseNeeded,
+                offset, value
+            )
+            //bleSyncServer.addIncomingBlock(value);
+            gattServer.sendResponse(device, requestId, BluetoothGatt.GATT_SUCCESS, 0, null)
+        }
+    }
+
     private val advertiseCallback = object : AdvertiseCallback() {
         override fun onStartSuccess(settingsInEffect: AdvertiseSettings?) {
             Timber.tag(TAG).i("LE Advertise Started.")
@@ -268,5 +262,12 @@ object SgPeripheral : BluetoothGattServerCallback() {
             Timber.tag(TAG)
                 .w("LE Advertise Failed: %s", BluetoothDiagnostic.printAdvError(errorCode))
         }
+    }
+
+    companion object {
+        private val SERVICE = UUID.fromString("6e400001-b5a3-f393-e0a9-e50e24dcca9e")
+        private val CHARA_RX = UUID.fromString("6e400003-b5a3-f393-e0a9-e50e24dcca9e")
+        private val CHARA_TX = UUID.fromString("6e400002-b5a3-f393-e0a9-e50e24dcca9e")
+        private val DESCRIPTOR_NOTIFICATION = UUID.fromString("00002902-0000-1000-8000-00805f9b34fb")
     }
 }

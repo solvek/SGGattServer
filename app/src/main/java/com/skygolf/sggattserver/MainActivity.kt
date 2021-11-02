@@ -8,6 +8,9 @@ import timber.log.Timber
 class MainActivity : AppCompatActivity() {
     private lateinit var log: EditText
 
+    private lateinit var peripheral: SgPeripheral
+    private lateinit var central: SgCentral
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
@@ -16,6 +19,9 @@ class MainActivity : AppCompatActivity() {
         Timber.plant(LogTree(), Timber.DebugTree())
 
         Timber.tag(TAG).i("App started")
+
+        peripheral = SgPeripheral(this)
+        central = SgCentral(this)
 
 //        if (ActivityCompat.checkSelfPermission(
 //                this,
@@ -26,8 +32,8 @@ class MainActivity : AppCompatActivity() {
 //            return
 //        }
 
-        SgPeripheral.start(this)
-        SgCentral.start(this)
+        peripheral.start()
+        central.start()
     }
 
     private inner class LogTree : Timber.Tree() {
