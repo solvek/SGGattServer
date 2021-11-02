@@ -13,8 +13,8 @@ import timber.log.Timber
 import java.util.*
 
 @SuppressLint("MissingPermission")
-object SgServer : BluetoothGattServerCallback() {
-    private const val TAG = "SgProfile"
+object SgPeripheral : BluetoothGattServerCallback() {
+    private const val TAG = "SgPeripheral"
     private val SERVICE = UUID.fromString("6e400001-b5a3-f393-e0a9-e50e24dcca9e")
     private val CHARA_RX = UUID.fromString("6e400003-b5a3-f393-e0a9-e50e24dcca9e")
     private val CHARA_TX = UUID.fromString("6e400002-b5a3-f393-e0a9-e50e24dcca9e")
@@ -27,7 +27,7 @@ object SgServer : BluetoothGattServerCallback() {
     private lateinit var gattServer: BluetoothGattServer
     private lateinit var characteristicRX: BluetoothGattCharacteristic
 
-    fun startServer(context: Context) {
+    fun start(context: Context) {
         bluetoothManager = context.getSystemService(AppCompatActivity.BLUETOOTH_SERVICE) as BluetoothManager
 
         gattServer = bluetoothManager.openGattServer(context, this)

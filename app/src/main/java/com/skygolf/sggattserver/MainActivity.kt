@@ -26,16 +26,19 @@ class MainActivity : AppCompatActivity() {
 //            return
 //        }
 
-        SgServer.startServer(this)
+        SgPeripheral.start(this)
+        SgCentral.start(this)
     }
 
     private inner class LogTree : Timber.Tree() {
         override fun log(priority: Int, tag: String?, message: String, t: Throwable?) {
             super.log(priority, tag, message, t)
 
-            runOnUiThread {
-                log.append("\r\n")
-                log.append(message)
+            if (tag != null) {
+                runOnUiThread {
+                    log.append("\r\n")
+                    log.append("$tag: $message")
+                }
             }
         }
     }
